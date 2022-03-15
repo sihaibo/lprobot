@@ -200,7 +200,7 @@ public class GateIoCommon {
             // 买，查询卖深度价格（U/单价=数量）
             final JSONArray asks = orderBookJSON.getJSONArray("asks");
             BigDecimal askTotal = BigDecimal.ZERO;
-            for (int i = asks.size() - 1; i >= 0; i--) {
+            for (int i = asks.size() - 2; i >= 0; i--) {
                 final JSONArray ask = asks.getJSONArray(i);
                 final BigDecimal price = ask.getBigDecimal(0);
                 askTotal = askTotal.add(ask.getBigDecimal(1));
@@ -212,7 +212,7 @@ public class GateIoCommon {
         } else {
             final JSONArray bids = orderBookJSON.getJSONArray("bids");
             BigDecimal bidCount = BigDecimal.ZERO;
-            for (int i = 0; i < bids.size(); i++) {
+            for (int i = 1; i < bids.size(); i++) {
                 final JSONArray bid = bids.getJSONArray(i);
                 final BigDecimal price = bid.getBigDecimal(0);
                 bidCount = bidCount.add(bid.getBigDecimal(1));

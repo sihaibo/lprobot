@@ -14,17 +14,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class CacheSingleton {
 
-    public static final String KEY_MD = "KEY_MD";
+    public static final String KEY_MA = "KEY_MA";
 
     /**
-     * 上次MD5值
+     * 上次MA5值
      */
-    public static final String KEY_MD5 = "KEY_MD5";
+    public static final String KEY_MA5 = "KEY_MA5";
 
-    /**
-     * 上次MD10值
-     */
-    public static final String KEY_MD10 = "KEY_MD10";
 
     /**
      * 上次收盘价

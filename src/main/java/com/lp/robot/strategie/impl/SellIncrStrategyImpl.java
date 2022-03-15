@@ -10,10 +10,10 @@ import com.lp.robot.dextools.service.TradeOrderService;
 import com.lp.robot.dextools.service.TradeProfitService;
 import com.lp.robot.gate.common.CacheSingleton;
 import com.lp.robot.gate.common.GateIoCommon;
-import com.lp.robot.gate.common.MdCalculate;
+import com.lp.robot.gate.common.MaCalculate;
 import com.lp.robot.gate.event.ErrorEvent;
 import com.lp.robot.gate.event.StrategySellCompleteEvent;
-import com.lp.robot.gate.obj.MdResultObj;
+import com.lp.robot.gate.obj.MaResultObj;
 import com.lp.robot.strategie.StrategyProvider;
 import java.math.BigDecimal;
 import java.time.ZoneOffset;
@@ -125,13 +125,13 @@ public class SellIncrStrategyImpl implements StrategyProvider {
                 if (order.getLast().divide(order.getFilledPrice(), 2, BigDecimal.ROUND_DOWN).compareTo(new BigDecimal("1.03")) < 0) {
                     return;
                 }
-                // 3. 查询5分钟MD10线。没有下跌可以继续保留
+                // 3. 查询5分钟MA10线。没有下跌可以继续保留
                  // 查询一小时内5分钟K线
                 final List<Candlestick2> candlestick = gateIoCommon.candlestick(tradeOrder.getSymbol(), "300", "1");
-                final MdResultObj mdResult = MdCalculate.execute(candlestick, 300, 10);
+                final MaResultObj maResult = MaCalculate.execute(candlestick, 300, 10);
 
-                log.info("sell incr md10 eq. current:{}, previous:{}  symbol:{}", mdResult.getCurrent(), mdResult.getPrevious(), tradeOrder.getSymbol());
-                if (mdResult.getCurrent().compareTo(mdResult.getPrevious()) >= 0) {
+                log.info("sell incr ma10 eq. current:{}, previous:{}  symbol:{}", maResult.getCurrent(), maResult.getPrevious(), tradeOrder.getSymbol());
+                if (maResult.getCurrent().compareTo(maResult.getPrevious()) >= 0) {
                     return;
                 }
             } else {

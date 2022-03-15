@@ -1,22 +1,22 @@
 package com.lp.robot.gate.common;
 
 import com.lp.robot.gate.obj.Candlestick2;
-import com.lp.robot.gate.obj.MdResultObj;
+import com.lp.robot.gate.obj.MaResultObj;
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
 
 /**
  * 功能描述: <br/>
- * MD计算
+ * MA计算
  * @author HaiBo
  * @date: 2022-03-14 10:08<br/>
  * @since JDK 1.8
  */
-public class MdCalculate {
+public class MaCalculate {
 
-    public static MdResultObj execute(List<Candlestick2> candlestick, int base, int index) {
-        MdResultObj result = new MdResultObj();
+    public static MaResultObj execute(List<Candlestick2> candlestick, int base, int index) {
+        MaResultObj result = new MaResultObj();
         result.setIndex(index);
         result.setBase(base);
         // 根据时间倒序

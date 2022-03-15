@@ -9,14 +9,14 @@ import java.math.BigDecimal;
  * @date: 2022-03-14 10:06<br/>
  * @since JDK 1.8
  */
-public class MdResultObj {
+public class MaResultObj {
 
     /**
-     * 上一个MD值
+     * 上一个MA值
      */
     private BigDecimal previous;
     /**
-     * 当前MD值
+     * 当前MA值
      */
     private BigDecimal current;
 
@@ -26,7 +26,7 @@ public class MdResultObj {
     private int base;
 
     /**
-     * MD几，MD5/MD10
+     * MA几，MA5/MA10
      */
     private int index;
 

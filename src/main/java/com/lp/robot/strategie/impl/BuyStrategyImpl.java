@@ -6,9 +6,9 @@ import com.lp.robot.gate.obj.TickersObj;
 import com.lp.robot.dextools.service.ConfigService;
 import com.lp.robot.gate.common.CacheSingleton;
 import com.lp.robot.gate.common.GateIoCommon;
-import com.lp.robot.gate.common.MdCalculate;
+import com.lp.robot.gate.common.MaCalculate;
 import com.lp.robot.gate.event.StrategyBuyCompleteEvent;
-import com.lp.robot.gate.obj.MdResultObj;
+import com.lp.robot.gate.obj.MaResultObj;
 import com.lp.robot.strategie.StrategyProvider;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -79,14 +79,19 @@ public class BuyStrategyImpl implements StrategyProvider {
         // 获取5分钟K线
         // 查询一小时内5分钟K线
         final List<Candlestick2> candlestick5 = gateIoCommon.candlestick(symbol, "300", "1");
-        // 计算15分钟的MD10
+        // 计算15分钟的MA10
         // 查询一小时内5分钟K线
         final List<Candlestick2> candlestick15 = gateIoCommon.candlestick(symbol, "900", "3");
-
-        // 计算5分钟MD5、MD10、10分钟MD10
-        if (isMdContinue(symbol, MdCalculate.execute(candlestick5, 300, 5))
-                || isMdContinue(symbol, MdCalculate.execute(candlestick5, 300,10))
-                || isMdContinue(symbol, MdCalculate.execute(candlestick15,900, 10))) {
+        // 计算5分钟MA5、MA10、15分钟MA10
+        final boolean ma35 = isMaContinue(symbol, MaCalculate.execute(candlestick5, 300, 5));
+        final boolean ma310 = isMaContinue(symbol, MaCalculate.execute(candlestick5, 300, 10));
+        final boolean md910 = isMaContinue(symbol, MaCalculate.execute(candlestick15, 900, 10));
+        if (ma35 || ma310 || md910) {
+            return null;
+        }
+        // 计算1分钟的K线是否上涨（遇到过正在下跌的情况就买入进去了）
+        final MaResultObj maResultObj = MaCalculate.execute(gateIoCommon.candlestick(symbol, "60", "0.5"), 60, 5);
+        if (maResultObj.getCurrent().compareTo(maResultObj.getPrevious()) < 0) {
             return null;
         }
 
@@ -112,26 +117,26 @@ public class BuyStrategyImpl implements StrategyProvider {
         return symbol;
     }
 
-    private boolean isMdContinue(String symbol, MdResultObj md) {
+    private boolean isMaContinue(String symbol, MaResultObj ma) {
 
-        log.info("buy strategy, md{} eq current:{}, previous:{} symbol:{}", md.getKey(), md.getCurrent(), md.getPrevious(), symbol);
+        log.info("buy strategy, ma{} eq current:{}, previous:{} symbol:{}", ma.getKey(), ma.getCurrent(), ma.getPrevious(), symbol);
 
-        if (md.getCurrent().compareTo(md.getPrevious()) <= 0) {
-            log.warn("buy strategy md{} is down, continue. symbol:{}", md.getKey(), symbol);
-            CacheSingleton.getInstance().remove(CacheSingleton.KEY_MD + md.getKey(), symbol);
+        if (ma.getCurrent().compareTo(ma.getPrevious()) <= 0) {
+            log.warn("buy strategy ma{} is down, continue. symbol:{}", ma.getKey(), symbol);
+            CacheSingleton.getInstance().remove(CacheSingleton.KEY_MA + ma.getKey(), symbol);
             return true;
         } else {
-            // 记录下转折点MD
-            BigDecimal cache = CacheSingleton.getInstance().get(CacheSingleton.KEY_MD + md.getKey(), symbol);
+            // 记录下转折点MA
+            BigDecimal cache = CacheSingleton.getInstance().get(CacheSingleton.KEY_MA + ma.getKey(), symbol);
             if (Objects.isNull(cache)) {
-                log.warn("buy strategy cache md{} init . md:{}, symbol:{}", md.getKey(), md.getPrevious(), symbol);
-                CacheSingleton.getInstance().put(CacheSingleton.KEY_MD + md.getKey(), symbol, md.getPrevious());
-                cache = md.getPrevious();
+                log.warn("buy strategy cache ma{} init . ma:{}, symbol:{}", ma.getKey(), ma.getPrevious(), symbol);
+                CacheSingleton.getInstance().put(CacheSingleton.KEY_MA + ma.getKey(), symbol, ma.getPrevious());
+                cache = ma.getPrevious();
             }
-            log.info("buy strategy current md{}:{} cache md:{} . symbol:{}", md.getKey(), md.getCurrent(), cache, symbol);
-            // 判断转折点MD5和当前MD5
-            if (md.getCurrent().divide(cache, 3, BigDecimal.ROUND_DOWN).compareTo(new BigDecimal("1.005")) < 0) {
-                log.warn("buy strategy current md{}:{} < cache md:{} 0.5% continue. symbol:{}", md.getKey(), md.getCurrent(), cache, symbol);
+            log.info("buy strategy current ma{}:{} cache ma:{} . symbol:{}", ma.getKey(), ma.getCurrent(), cache, symbol);
+            // 判断转折点MA5和当前MA5
+            if (ma.getCurrent().divide(cache, 3, BigDecimal.ROUND_DOWN).compareTo(new BigDecimal("1.005")) < 0) {
+                log.warn("buy strategy current ma{}:{} < cache ma:{} 0.5% continue. symbol:{}", ma.getKey(), ma.getCurrent(), cache, symbol);
                 return true;
             }
         }
@@ -149,23 +154,23 @@ public class BuyStrategyImpl implements StrategyProvider {
             final Candlestick2 candlestick2 = candlestick.get(i);
             closeSum = closeSum.add(candlestick2.getClose());
         }
-        // MD5值
-        final BigDecimal md5 = closeSum.divide(new BigDecimal("5"), closeSum.scale(), BigDecimal.ROUND_HALF_UP);
+        // MA5值
+        final BigDecimal ma5 = closeSum.divide(new BigDecimal("5"), closeSum.scale(), BigDecimal.ROUND_HALF_UP);
         // 最后一次收盘K线
         final Candlestick2 lastCandlestick = candlestick.get(1);
-        // 上一次MD5值不存在的话，初始化一下
-        if (Objects.isNull(CacheSingleton.getInstance().get(CacheSingleton.KEY_MD5, symbol))) {
+        // 上一次MA5值不存在的话，初始化一下
+        if (Objects.isNull(CacheSingleton.getInstance().get(CacheSingleton.KEY_MA5, symbol))) {
             log.info("buy strategy last close is null. init. symbol:{}", symbol);
-            lastVal(symbol, md5, lastCandlestick.getClose());
+            lastVal(symbol, ma5, lastCandlestick.getClose());
             return null;
         }
 
-        if (md5.compareTo(CacheSingleton.getInstance().get(CacheSingleton.KEY_MD5, symbol)) <= 0) {
-            lastVal(symbol, md5, lastCandlestick.getClose());
+        if (ma5.compareTo(CacheSingleton.getInstance().get(CacheSingleton.KEY_MA5, symbol)) <= 0) {
+            lastVal(symbol, ma5, lastCandlestick.getClose());
             return null;
         }
 
-        // 判断最近的MD5值
+        // 判断最近的MA5值
         List<BigDecimal> lastList = new ArrayList<>();
         LimitedList<Candlestick2> limitedList = new LimitedList<>(5);
         for (int i = 1; i < candlestick.size(); i++) {
@@ -185,8 +190,8 @@ public class BuyStrategyImpl implements StrategyProvider {
             }
         }
         if (g < 4) {
-            log.info("buy strategy md5 history failed. symbol:{} ", symbol);
-            lastVal(symbol, md5, lastCandlestick.getClose());
+            log.info("buy strategy ma5 history failed. symbol:{} ", symbol);
+            lastVal(symbol, ma5, lastCandlestick.getClose());
             return null;
         }
 
@@ -206,17 +211,17 @@ public class BuyStrategyImpl implements StrategyProvider {
         final BigDecimal multiply = maxClose.divide(minClose, 4, BigDecimal.ROUND_DOWN)
                 .subtract(BigDecimal.ONE).multiply(new BigDecimal("0.3")).add(BigDecimal.ONE).multiply(minClose);
         if (current.compareTo(multiply) > 0) {
-            lastVal(symbol, md5, lastCandlestick.getClose());
+            lastVal(symbol, ma5, lastCandlestick.getClose());
             return null;
         }
 
-        // 本次MD5 > 上次MD5，信号转折点
+        // 本次MA5 > 上次MA5，信号转折点
         // 最新的K线图
         final Candlestick2 latest = candlestick.get(0);
         final BigDecimal close = latest.getClose();
         // 最新收盘价/转折点收盘价 计算百分比
         final BigDecimal percentage = close.divide(CacheSingleton.getInstance().get(CacheSingleton.KEY_LAST, symbol), 4, BigDecimal.ROUND_HALF_UP);
-        lastVal(symbol, md5, lastCandlestick.getClose());
+        lastVal(symbol, ma5, lastCandlestick.getClose());
         // 百分比大于等于千五，可以买入。或者最新的K线判断信号
         if (percentage.compareTo(new BigDecimal("1.005")) >= 0 || latestSignal(lastCandlestick, latest)) {
             return symbol;
@@ -238,8 +243,8 @@ public class BuyStrategyImpl implements StrategyProvider {
                 && latest.getClose().compareTo(latest.getOpen()) > 0;
     }
 
-    private void lastVal(String symbol, BigDecimal md5, BigDecimal close) {
-        CacheSingleton.getInstance().put(CacheSingleton.KEY_MD5, symbol, md5);
+    private void lastVal(String symbol, BigDecimal ma5, BigDecimal close) {
+        CacheSingleton.getInstance().put(CacheSingleton.KEY_MA5, symbol, ma5);
         CacheSingleton.getInstance().put(CacheSingleton.KEY_LAST, symbol, close);
     }
 }
