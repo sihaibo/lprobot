@@ -85,8 +85,8 @@ public class BuyStrategyImpl implements StrategyProvider {
         // 计算5分钟MA5、MA10、15分钟MA10
         final boolean ma35 = isMaContinue(symbol, MaCalculate.execute(candlestick5, 300, 5));
         final boolean ma310 = isMaContinue(symbol, MaCalculate.execute(candlestick5, 300, 10));
-        final boolean md910 = isMaContinue(symbol, MaCalculate.execute(candlestick15, 900, 10));
-        if (ma35 || ma310 || md910) {
+        final boolean md95 = isMaContinue(symbol, MaCalculate.execute(candlestick15, 900, 5));
+        if (ma35 || ma310 || md95) {
             return null;
         }
         // 计算1分钟的K线是否上涨（遇到过正在下跌的情况就买入进去了）
