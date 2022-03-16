@@ -16,6 +16,7 @@ import com.lp.robot.gate.event.StrategySellCompleteEvent;
 import com.lp.robot.gate.obj.MaResultObj;
 import com.lp.robot.strategie.StrategyProvider;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Objects;
@@ -84,13 +85,13 @@ public class SellIncrStrategyImpl implements StrategyProvider {
                     applicationContext.publishEvent(new ErrorEvent(tradeOrder.getSymbol(), String.format("卖单号：%s，查询失败。", sellOrderNumber.toPlainString())));
                     return;
                 }
+                final TradeOrder sellTradeOrder = tradeOrderService.getByOrderNumber(sellOrderNumber.toPlainString());
                 // 卖单成功，更新订单状态
                 if (TradeOrderStatusEnum.CLOSED.equals(sell.getTradeOrderStatus())) {
                     // 1. 更新买单成功
                     tradeOrderService.updateStatusById(TradeOrderStatusEnum.CLOSED, tradeOrder.getId());
                     // 2. 更新卖单成功
-                    final Integer id = tradeOrderService.getByOrderNumber(sellOrderNumber.toPlainString()).getId();
-                    tradeOrderService.updateStatusById(TradeOrderStatusEnum.CLOSED, id);
+                    tradeOrderService.updateStatusById(TradeOrderStatusEnum.CLOSED, sellTradeOrder.getId());
                     CacheSingleton.getInstance().remove(CacheSingleton.KEY_BUY_INCR_ORDER_NUMBER, tradeOrder.getOrderNumber());
                     CacheSingleton.getInstance().remove(CacheSingleton.KEY_BUY_INCR_MAX_PRICE, tradeOrder.getSymbol());
                     // 3. 计算利润
@@ -103,8 +104,23 @@ public class SellIncrStrategyImpl implements StrategyProvider {
                     tradeProfit.setSymbol(tradeOrder.getSymbol());
                     tradeProfit.setStrategy(tradeOrder.getStrategy());
                     tradeProfitService.create(tradeProfit);
+                } else if (TradeOrderStatusEnum.CANCELLED.equals(sell.getTradeOrderStatus())) {
+                    // 通过交易所手动取消订单了
+                    // 1. 更新卖单取消
+                    tradeOrderService.updateStatusById(TradeOrderStatusEnum.CANCELLED, sellTradeOrder.getId());
+                    CacheSingleton.getInstance().remove(CacheSingleton.KEY_BUY_INCR_ORDER_NUMBER, tradeOrder.getOrderNumber());
+                } else if (TradeOrderStatusEnum.OPEN.equals(sell.getTradeOrderStatus())) {
+                    // 1. 卖单挂了不到3分钟，可以不卖
+                    if (sellTradeOrder.getCreateDateTime().plusMinutes(3).compareTo(LocalDateTime.now()) > 0) {
+                        return;
+                    }
+                    final Boolean cancel = gateIoCommon.cancel(tradeOrder.getSymbol(), sellOrderNumber.toPlainString());
+                    if (cancel) {
+                        // 1. 更新卖单取消
+                        tradeOrderService.updateStatusById(TradeOrderStatusEnum.CANCELLED, sellTradeOrder.getId());
+                        CacheSingleton.getInstance().remove(CacheSingleton.KEY_BUY_INCR_ORDER_NUMBER, tradeOrder.getOrderNumber());
+                    }
                 }
-                // TODO: 2022/3/15 判断下，一直没有成功说明被瀑布击穿了，当前卖单如果是盈利单就不处理了。非盈利的话判断当前在回调的话就取消卖单
                 return;
             }
             // 最新价>买入价
