@@ -137,16 +137,16 @@ public class SellIncrStrategyImpl implements StrategyProvider {
                 if (order.getLast().compareTo(sellPrice) > 0) {
                     return;
                 }
-                // 2. 买入利润低于1.03的话，先保留继续等等奇迹
-                if (order.getLast().divide(order.getFilledPrice(), 2, BigDecimal.ROUND_DOWN).compareTo(new BigDecimal("1.03")) < 0) {
+                // 2. 买入利润低于1.02的话，先保留继续等等奇迹
+                if (order.getLast().divide(order.getFilledPrice(), 2, BigDecimal.ROUND_DOWN).compareTo(new BigDecimal("1.02")) < 0) {
                     return;
                 }
-                // 3. 查询5分钟MA10线。没有下跌可以继续保留
+                // 3. 查询5分钟MA5线。没有下跌可以继续保留
                  // 查询一小时内5分钟K线
                 final List<Candlestick2> candlestick = gateIoCommon.candlestick(tradeOrder.getSymbol(), "300", "1");
-                final MaResultObj maResult = MaCalculate.execute(candlestick, 300, 10);
+                final MaResultObj maResult = MaCalculate.execute(candlestick, 300, 5);
 
-                log.info("sell incr ma10 eq. current:{}, previous:{}  symbol:{}", maResult.getCurrent(), maResult.getPrevious(), tradeOrder.getSymbol());
+                log.info("sell incr ma5 eq. current:{}, previous:{}  symbol:{}", maResult.getCurrent(), maResult.getPrevious(), tradeOrder.getSymbol());
                 if (maResult.getCurrent().compareTo(maResult.getPrevious()) >= 0) {
                     return;
                 }

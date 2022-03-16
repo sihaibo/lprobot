@@ -32,7 +32,7 @@ public class ConfigServiceImpl implements ConfigService {
 
     @Override
     public int getStrategyNumber(String strategyName) {
-        final String config = getByKey("strategy.number", "{\"BASE\":\"10\",\"INCR\":\"10\"}");
+        final String config = getByKey("strategy.number", "{\"BASE\":\"2\",\"INCR\":\"2\"}");
         JSONObject configJSON = JSON.parseObject(config);
         return configJSON.getIntValue(strategyName);
     }

@@ -135,7 +135,7 @@ public class BuyStrategyImpl implements StrategyProvider {
             }
             log.info("buy strategy current ma{}:{} cache ma:{} . symbol:{}", ma.getKey(), ma.getCurrent(), cache, symbol);
             // 判断转折点MA5和当前MA5
-            if (ma.getCurrent().divide(cache, 3, BigDecimal.ROUND_DOWN).compareTo(new BigDecimal("1.005")) < 0) {
+            if (ma.getCurrent().divide(cache, 3, BigDecimal.ROUND_DOWN).compareTo(new BigDecimal("1.002")) < 0) {
                 log.warn("buy strategy current ma{}:{} < cache ma:{} 0.5% continue. symbol:{}", ma.getKey(), ma.getCurrent(), cache, symbol);
                 return true;
             }
