@@ -47,6 +47,10 @@ public class CacheSingleton {
      */
     public static final String KEY_BUY_INCR_ORDER_NUMBER = "KEY_BUY_INCR_ORDER_NUMBER";
 
+    public static final String KEY_STRATEGY_A = "A";
+    public static final String KEY_STRATEGY_B = "B";
+    public static final String KEY_STRATEGY_C = "C";
+
     private Map<String, ConcurrentHashMap<String, BigDecimal>> cache = new ConcurrentHashMap<>();
 
     private static class CacheSingletonInstance{

@@ -55,7 +55,6 @@ public class SellIncrStrategyImpl implements StrategyProvider {
         final List<TradeOrder> tradeOrders = tradeOrderService.findProcessing();
         // 2. 判断买单成功
         tradeOrders.stream()
-//                .filter(tradeOrder -> "INCR".equals(tradeOrder.getStrategy()))
                 .filter(tradeOrder -> TradeOrderTypeEnum.BUY.equals(tradeOrder.getTradeOrderType()))
                 .filter(tradeOrder -> TradeOrderStatusEnum.OPEN.equals(tradeOrder.getTradeOrderStatus()))
                 .forEach(tradeOrder -> executor.execute(() -> execute(tradeOrder)));
@@ -169,7 +168,7 @@ public class SellIncrStrategyImpl implements StrategyProvider {
             sell.setTradeOrderStatus(TradeOrderStatusEnum.OPEN);
             sell.setTradeOrderType(TradeOrderTypeEnum.SELL);
             sell.setTradeOrderVersion(TradeOrderVersion.V2);
-            sell.setStrategy("INCR");
+            sell.setStrategy(CacheSingleton.KEY_STRATEGY_B);
             final TradeOrder result = gateIoCommon.sell(tradeOrder.getSymbol(), sell.getPrice(), sell.getTradeNumber());
             if (StringUtils.isEmpty(result.getOrderNumber())) {
                 applicationContext.publishEvent(new ErrorEvent(tradeOrder.getSymbol(),

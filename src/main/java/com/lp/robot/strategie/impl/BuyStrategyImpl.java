@@ -66,10 +66,10 @@ public class BuyStrategyImpl implements StrategyProvider {
         }));
         try { latch.await(); } catch (InterruptedException e) { e.printStackTrace(); }
         // 发起买入
-        final int number = configService.getStrategyNumber("BASE");
+        final int number = configService.getStrategyNumber(CacheSingleton.KEY_STRATEGY_A);
         for (int i = 0; i < symbols.size(); i++) {
             if (i < number) {
-                applicationContext.publishEvent(new StrategyBuyCompleteEvent(symbols.get(i), "BASE", number));
+                applicationContext.publishEvent(new StrategyBuyCompleteEvent(symbols.get(i), CacheSingleton.KEY_STRATEGY_A, number));
             }
         }
     }

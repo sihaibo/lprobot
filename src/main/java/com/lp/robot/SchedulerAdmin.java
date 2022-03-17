@@ -26,6 +26,9 @@ public class SchedulerAdmin {
     @Resource(name = "buyIncrStrategy")
     private StrategyProvider buyIncrStrategy;
 
+    @Resource(name = "buyCStrategy")
+    private StrategyProvider buyCStrategy;
+
     @Resource(name = "sellIncrStrategy")
     private StrategyProvider sellIncrStrategy;
 
@@ -41,6 +44,7 @@ public class SchedulerAdmin {
     @Scheduled(cron = "10 1/5 * * * ?")
     private void buy() {
         buyStrategy.execute();
+        buyCStrategy.execute();
     }
 
     @Scheduled(cron = "0/10 * * * * ?")

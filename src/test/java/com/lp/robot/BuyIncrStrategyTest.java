@@ -24,9 +24,12 @@ public class BuyIncrStrategyTest {
     @Resource(name = "buyStrategy")
     private StrategyProvider buyStrategy;
 
+    @Resource(name = "buyCStrategy")
+    private StrategyProvider buyCStrategy;
+
     @Test
     public void buy() {
-        buyStrategy.execute();
+        buyCStrategy.execute();
     }
 
 }

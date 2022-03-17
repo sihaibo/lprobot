@@ -64,6 +64,8 @@ public class BuyIncrStrategyImpl implements StrategyProvider {
         final String volume = configService.getByKey("trading.volume", "3000000");
         final List<TickersObj> tickers = gateIoCommon.getAllTickers(exclude, volume);
 
+        log.info("buy incr strategy symbol:{}", tickers.stream().map(TickersObj::getSymbol).collect(Collectors.toList()));
+
         CountDownLatch latch = new CountDownLatch(tickers.size());
         List<TickersObj> percentages = new ArrayList<>();
         tickers.forEach(ticker -> executor.execute(() -> {
@@ -85,7 +87,7 @@ public class BuyIncrStrategyImpl implements StrategyProvider {
                 .sorted(Comparator.comparing(TickersObj::getBuy)).collect(Collectors.toList());
         log.info("buy incr strategy sort result:{}", sort.stream().map(TickersObj::getSymbol).collect(Collectors.toList()));
         // 买入
-        int number = configService.getStrategyNumber("INCR");
+        int number = configService.getStrategyNumber(CacheSingleton.KEY_STRATEGY_B);
 
         for (TickersObj tickersObj : sort) {
             // 已经买过的就不要在买了
@@ -96,13 +98,12 @@ public class BuyIncrStrategyImpl implements StrategyProvider {
                 return;
             }
             timedCache.put(tickersObj.getSymbol(), tickersObj.getSymbol());
-            applicationContext.publishEvent(new StrategyBuyCompleteEvent(tickersObj.getSymbol(), "INCR", number));
+            applicationContext.publishEvent(new StrategyBuyCompleteEvent(tickersObj.getSymbol(), CacheSingleton.KEY_STRATEGY_B, number));
             number--;
         }
     }
 
     private BigDecimal execute(String symbol) {
-        log.info("buy incr strategy symbol:{}", symbol);
         final LocalTime localTime = LocalTime.now();
         // 大于0点，小于8点（0点涨幅操作）
         if (localTime.compareTo(ZERO) > 0 && EIGHT.compareTo(localTime) > 0) {

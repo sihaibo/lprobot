@@ -31,6 +31,7 @@ import org.springframework.util.StringUtils;
  */
 @Slf4j
 @Service("sellStrategy")
+@Deprecated
 public class SellStrategyImpl implements StrategyProvider {
 
     @Autowired
@@ -48,14 +49,14 @@ public class SellStrategyImpl implements StrategyProvider {
         final List<TradeOrder> tradeOrders = tradeOrderService.findProcessing();
         // 2. 买单处理
         final List<TradeOrder> buyTradeOrder = tradeOrders.stream()
-                .filter(tradeOrder -> "BASE".equals(tradeOrder.getStrategy()))
+                .filter(tradeOrder -> CacheSingleton.KEY_STRATEGY_A.equals(tradeOrder.getStrategy()))
                 .filter(tradeOrder -> TradeOrderTypeEnum.BUY.equals(tradeOrder.getTradeOrderType()))
                 .filter(tradeOrder -> TradeOrderStatusEnum.OPEN.equals(tradeOrder.getTradeOrderStatus()))
                 .collect(Collectors.toList());
         buyTradeOrder.forEach(tradeOrder -> executor.execute(() -> buy(tradeOrder)));
         // 3. 卖单处理
         final List<TradeOrder> sellTradeOrder = tradeOrders.stream()
-                .filter(tradeOrder -> "BASE".equals(tradeOrder.getStrategy()))
+                .filter(tradeOrder -> CacheSingleton.KEY_STRATEGY_A.equals(tradeOrder.getStrategy()))
                 .filter(tradeOrder -> TradeOrderTypeEnum.SELL.equals(tradeOrder.getTradeOrderType()))
                 .filter(tradeOrder -> TradeOrderStatusEnum.OPEN.equals(tradeOrder.getTradeOrderStatus()))
                 .collect(Collectors.toList());
@@ -103,7 +104,7 @@ public class SellStrategyImpl implements StrategyProvider {
         sell.setTradeOrderStatus(TradeOrderStatusEnum.OPEN);
         sell.setTradeOrderType(TradeOrderTypeEnum.SELL);
         sell.setTradeOrderVersion(TradeOrderVersion.V4);
-        sell.setStrategy("BASE");
+        sell.setStrategy(CacheSingleton.KEY_STRATEGY_A);
         return sell;
     }
 
