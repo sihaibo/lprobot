@@ -70,35 +70,32 @@ public class BuyCStrategyImpl implements StrategyProvider {
         // 查询一小时内5分钟K线
         final List<Candlestick2> candlestick = gateIoCommon.candlestick(symbol, "300", "1");
         candlestick.sort(Comparator.comparing(Candlestick2::getTime, Comparator.reverseOrder()));
-        LimitedList<Candlestick2> limitedList = new LimitedList<>(5);
+        LimitedList<Candlestick2> limitedList = new LimitedList<>(10);
         BigDecimal first = BigDecimal.ZERO, second = BigDecimal.ZERO, third = BigDecimal.ZERO;
-        for (int i = 1; i < 8; i++) {
+        for (int i = 1; i < 13; i++) {
             limitedList.add(candlestick.get(i));
-            if (limitedList.size() < 5) {
+            if (limitedList.size() < 10) {
                 continue;
             }
-            if (i == 5) {
+            if (i == 10) {
                 third = limitedList.stream()
                         .map(Candlestick2::getClose)
                         .reduce(BigDecimal.ZERO, BigDecimal::add)
                         .divide(new BigDecimal(String.valueOf(5)), candlestick.get(0).getClose().scale(), BigDecimal.ROUND_DOWN);
             }
-            if (i == 6) {
+            if (i == 11) {
                 second = limitedList.stream()
                         .map(Candlestick2::getClose)
                         .reduce(BigDecimal.ZERO, BigDecimal::add)
                         .divide(new BigDecimal(String.valueOf(5)), candlestick.get(0).getClose().scale(), BigDecimal.ROUND_DOWN);
             }
-            if (i == 7) {
+            if (i == 12) {
                 first = limitedList.stream()
                         .map(Candlestick2::getClose)
                         .reduce(BigDecimal.ZERO, BigDecimal::add)
                         .divide(new BigDecimal(String.valueOf(5)), candlestick.get(0).getClose().scale(), BigDecimal.ROUND_DOWN);
             }
         }
-        if (third.compareTo(second) > 0 && first.compareTo(second) > 0) {
-            return true;
-        }
-        return false;
+        return third.compareTo(second) > 0 && first.compareTo(second) > 0;
     }
 }
