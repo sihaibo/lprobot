@@ -1,14 +1,14 @@
 package com.lp.robot.strategie.impl;
 
-import com.lp.robot.gate.obj.Candlestick2;
-import com.lp.robot.gate.common.LimitedList;
-import com.lp.robot.gate.obj.TickersObj;
 import com.lp.robot.dextools.service.ConfigService;
 import com.lp.robot.gate.common.CacheSingleton;
 import com.lp.robot.gate.common.GateIoCommon;
+import com.lp.robot.gate.common.LimitedList;
 import com.lp.robot.gate.common.MaCalculate;
 import com.lp.robot.gate.event.StrategyBuyCompleteEvent;
+import com.lp.robot.gate.obj.Candlestick2;
 import com.lp.robot.gate.obj.MaResultObj;
+import com.lp.robot.gate.obj.TickersObj;
 import com.lp.robot.strategie.StrategyProvider;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -49,7 +49,7 @@ public class BuyStrategyImpl implements StrategyProvider {
         final String volume = configService.getByKey("trading.volume", "3000000");
         final List<TickersObj> tickers = gateIoCommon.getAllTickers(exclude, volume);
 //        TickersObj tickersObj = new TickersObj();
-//        tickersObj.setSymbol("troy_usdt");
+//        tickersObj.setSymbol("mir_usdt");
 //        List<TickersObj> tickers = Collections.singletonList(tickersObj);
 
         CountDownLatch latch = new CountDownLatch(tickers.size());
@@ -81,12 +81,12 @@ public class BuyStrategyImpl implements StrategyProvider {
         final List<Candlestick2> candlestick5 = gateIoCommon.candlestick(symbol, "300", "1");
         // 计算15分钟的MA10
         // 查询一小时内5分钟K线
-        final List<Candlestick2> candlestick15 = gateIoCommon.candlestick(symbol, "900", "3");
+//        final List<Candlestick2> candlestick15 = gateIoCommon.candlestick(symbol, "900", "3");
         // 计算5分钟MA5、MA10、15分钟MA10
         final boolean ma35 = isMaContinue(symbol, MaCalculate.execute(candlestick5, 300, 5));
         final boolean ma310 = isMaContinue(symbol, MaCalculate.execute(candlestick5, 300, 10));
-        final boolean md95 = isMaContinue(symbol, MaCalculate.execute(candlestick15, 900, 5));
-        if (ma35 || ma310 || md95) {
+//        final boolean md95 = isMaContinue(symbol, MaCalculate.execute(candlestick15, 900, 5));
+        if (ma35 || ma310) {
             return null;
         }
         // 计算1分钟的K线是否上涨（遇到过正在下跌的情况就买入进去了）
