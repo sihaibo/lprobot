@@ -1,9 +1,11 @@
 package com.lp.robot.strategie.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.lp.robot.dextools.service.ConfigService;
 import com.lp.robot.gate.common.CacheSingleton;
 import com.lp.robot.gate.common.GateIoCommon;
 import com.lp.robot.gate.common.LimitedList;
+import com.lp.robot.gate.event.ErrorEvent;
 import com.lp.robot.gate.event.StrategyBuyCompleteEvent;
 import com.lp.robot.gate.obj.Candlestick2;
 import com.lp.robot.gate.obj.TickersObj;
@@ -72,6 +74,11 @@ public class BuyCStrategyImpl implements StrategyProvider {
         candlestick.sort(Comparator.comparing(Candlestick2::getTime, Comparator.reverseOrder()));
         LimitedList<Candlestick2> limitedList = new LimitedList<>(10);
         BigDecimal first = BigDecimal.ZERO, second = BigDecimal.ZERO, third = BigDecimal.ZERO;
+        if (candlestick.size() < 13) {
+            log.error("BuyCStrategyImpl execute. gate resp candlestick symbol:{} error. {}", symbol, JSON.toJSONString(candlestick));
+            applicationContext.publishEvent(new ErrorEvent(symbol, "查询1小时5分钟K线返回数量有问题."));
+            return false;
+        }
         for (int i = 1; i < 13; i++) {
             limitedList.add(candlestick.get(i));
             if (limitedList.size() < 10) {

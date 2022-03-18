@@ -16,6 +16,8 @@ public class CacheSingleton {
 
     public static final String KEY_MA = "KEY_MA";
 
+    public static final String KEY_MA_SELL = "KEY_MA_SELL";
+
     /**
      * 上次MA5值
      */

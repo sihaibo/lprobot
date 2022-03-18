@@ -130,8 +130,8 @@ public class SellIncrStrategyImpl implements StrategyProvider {
                 // 卖出价 = 买入价 + 利润保留80%
                 final BigDecimal sellPrice = order.getFilledPrice()
                         .add(profit.multiply(new BigDecimal("0.8")).setScale(profit.scale(), BigDecimal.ROUND_DOWN));
-                log.info("sell incr last > buy price. sell price:{}, last:{}, buy price:{}, symbol:{}",
-                        sellPrice, order.getLast(), order.getFilledPrice(), tradeOrder.getSymbol());
+                log.info("sell incr last > buy price. symbol:{} sell price:{}, last:{}, buy price:{}",
+                        tradeOrder.getSymbol(), sellPrice, order.getLast(), order.getFilledPrice());
                 // 当前价格比卖出价大，可以继续保留
                 if (order.getLast().compareTo(sellPrice) > 0) {
                     return;
@@ -141,17 +141,39 @@ public class SellIncrStrategyImpl implements StrategyProvider {
                 // 2. 查询5分钟MA5线。没有下跌可以继续保留
                 final List<Candlestick2> candlestick = gateIoCommon.candlestick(tradeOrder.getSymbol(), "300", "1");
                 final MaResultObj maResult = MaCalculate.execute(candlestick, 300, 5);
-                log.info("sell incr ma5 eq. current:{}, previous:{}  symbol:{}", maResult.getCurrent(), maResult.getPrevious(), tradeOrder.getSymbol());
                 // 3. 买入利润低于1.02的话，先保留继续等等奇迹
-                if (maResult.getCurrent().compareTo(maResult.getPrevious()) >= 0
-                        && order.getLast().divide(order.getFilledPrice(), 2, BigDecimal.ROUND_DOWN).compareTo(new BigDecimal("1.02")) < 0) {
-                    return;
-                }
+//                if (maResult.getCurrent().compareTo(maResult.getPrevious()) >= 0
+//                        && order.getLast().divide(order.getFilledPrice(), 2, BigDecimal.ROUND_DOWN).compareTo(new BigDecimal("1.02")) < 0) {
+//                    return;
+//                }
 
+                BigDecimal cache = CacheSingleton.getInstance().get(CacheSingleton.KEY_MA_SELL, maResult.getKey());
+                log.info("sell incr ma5 eq. symbol:{} current:{}, previous:{}, cache:{}",
+                        tradeOrder.getSymbol(), maResult.getCurrent(), maResult.getPrevious(), cache);
+                if (maResult.getCurrent().compareTo(maResult.getPrevious()) >= 0) {
+                    // MA回涨，删除已经缓存的MA
+                    CacheSingleton.getInstance().remove(CacheSingleton.KEY_MA_SELL, maResult.getKey());
+                    // 买入利润低于1.02的话，先保留继续等等奇迹
+                    if (order.getLast().divide(order.getFilledPrice(), 2, BigDecimal.ROUND_DOWN).compareTo(new BigDecimal("1.02")) < 0) {
+                        return;
+                    }
+                } else {
+                    // MA跌落，缓存不存在就保存一下
+                    if (Objects.isNull(cache)) {
+                        cache = maResult.getPrevious();
+                        CacheSingleton.getInstance().put(CacheSingleton.KEY_MA_SELL, maResult.getKey(), cache);
+                    }
+                    // 缓存值和当前MA值大于千一，直接卖出
+                    if (cache.divide(maResult.getCurrent(), 3, BigDecimal.ROUND_DOWN).compareTo(new BigDecimal("1.002")) < 0) {
+                        return;
+                    }
+                    // 要卖出了，删除下缓存
+                    CacheSingleton.getInstance().remove(CacheSingleton.KEY_MA_SELL, maResult.getKey());
+                }
             } else {
                 // 亏损百分比
                 final BigDecimal percentage = order.getFilledPrice().divide(order.getLast(), 2, BigDecimal.ROUND_DOWN);
-                // 最新价比买入价小，买入价没有跌3%，可以不买
+                // 最新价比买入价小，买入价没有跌2%，可以不买
                 log.info("sell incr last < buy price. last:{}, buy price:{}, percentage:{}, symbol:{}",
                         order.getLast(), order.getFilledPrice(), percentage, tradeOrder.getSymbol());
                 if (percentage.compareTo(new BigDecimal("1.02")) < 0) {
