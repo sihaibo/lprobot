@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -57,6 +58,7 @@ public class StrategyBuyCompleteListener implements ApplicationListener<Strategy
 
         // 紧急避险。当BTC当日是亏本的时候就不买了
         final List<Candlestick2> candlestick = gateIoCommon.candlestick("btc_usdt", "3600", "25");
+        candlestick.sort(Comparator.comparing(Candlestick2::getTime, Comparator.reverseOrder()));
         final LocalDateTime localDateTime = LocalDateTime.of(LocalDate.now(), LocalTime.of(0, 0, 0));
         final long milli = localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli();
         final Optional<Candlestick2> opt = candlestick.stream().filter(candlestick2 -> candlestick2.getTime() == milli).findFirst();
