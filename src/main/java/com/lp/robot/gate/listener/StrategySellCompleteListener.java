@@ -8,6 +8,7 @@ import com.lp.robot.gate.common.GateIoCommon;
 import com.lp.robot.gate.event.ErrorEvent;
 import com.lp.robot.gate.event.StrategySellCompleteEvent;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,8 +51,9 @@ public class StrategySellCompleteListener implements ApplicationListener<Strateg
         final BigDecimal last = new BigDecimal(ticker.getLast());
         // 挂单中，判断价格和当前价格，相差3%就撤销订单
         if (TradeOrderStatusEnum.OPEN.equals(order.getTradeOrderStatus())) {
-            if (last.divide(tradeOrder.getPrice(), 2, BigDecimal.ROUND_HALF_UP).compareTo(new BigDecimal("1.03")) >= 0) {
-                log.info("sell strategy last price > order price 1.03 cancel buy order. orderNumber:{}, last:{}, order price:{}",
+            if (last.divide(tradeOrder.getPrice(), 2, BigDecimal.ROUND_HALF_UP).compareTo(new BigDecimal("1.02")) >= 0
+                    || tradeOrder.getCreateDateTime().plusMinutes(30).compareTo(LocalDateTime.now()) < 0) {
+                log.info("sell strategy last price > order price 1.02 cancel buy order. orderNumber:{}, last:{}, order price:{}",
                         tradeOrder.getOrderNumber(), last, tradeOrder.getPrice());
                 final Boolean cancel = gateIoCommon.cancel(tradeOrder.getSymbol(), tradeOrder.getOrderNumber());
                 if (cancel) {

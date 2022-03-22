@@ -1,6 +1,5 @@
 package com.lp.robot.gate.listener;
 
-import com.lp.robot.gate.obj.TickersObj;
 import com.lp.robot.dextools.entity.TradeOrder;
 import com.lp.robot.dextools.enums.TradeOrderStatusEnum;
 import com.lp.robot.dextools.enums.TradeOrderTypeEnum;
@@ -10,9 +9,16 @@ import com.lp.robot.dextools.service.TradeOrderService;
 import com.lp.robot.gate.common.GateIoCommon;
 import com.lp.robot.gate.event.ErrorEvent;
 import com.lp.robot.gate.event.StrategyBuyCompleteEvent;
+import com.lp.robot.gate.obj.Candlestick2;
+import com.lp.robot.gate.obj.TickersObj;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,12 +49,23 @@ public class StrategyBuyCompleteListener implements ApplicationListener<Strategy
 
     private ReentrantLock lock = new ReentrantLock();
 
-
     @Async
     @Override
     public void onApplicationEvent(StrategyBuyCompleteEvent event) {
 
         String symbol = String.valueOf(event.getSource());
+
+        // 紧急避险。当BTC当日是亏本的时候就不买了
+        final List<Candlestick2> candlestick = gateIoCommon.candlestick("btc_usdt", "3600", "25");
+        final LocalDateTime localDateTime = LocalDateTime.of(LocalDate.now(), LocalTime.of(0, 0, 0));
+        final long milli = localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli();
+        final Optional<Candlestick2> opt = candlestick.stream().filter(candlestick2 -> candlestick2.getTime() == milli).findFirst();
+        if (!opt.isPresent()) {
+            return;
+        }
+        if (candlestick.get(0).getClose().divide(opt.get().getOpen(), 5, BigDecimal.ROUND_HALF_UP).compareTo(BigDecimal.ONE) < 0) {
+            return;
+        }
 
         final List<TradeOrder> processing = tradeOrderService.findProcessing();
 
