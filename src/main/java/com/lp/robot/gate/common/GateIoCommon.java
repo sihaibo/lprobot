@@ -309,7 +309,7 @@ public class GateIoCommon {
             tradeOrder.setErrorMsg("buy http exception");
             return tradeOrder;
         }
-        log.info("gate.io request buy symbol:{} result:{}", symbol, result);
+        log.info("gate.io request buy symbol:{} params:{} result:{}", symbol, params, result);
         final JSONObject resultJSON = JSON.parseObject(result);
         if (!resultJSON.getBoolean("result")) {
             log.error("gate.io request buy failed continue. symbol: {}, result:{}", symbol, result);
