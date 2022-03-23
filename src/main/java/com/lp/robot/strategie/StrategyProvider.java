@@ -1,7 +1,5 @@
 package com.lp.robot.strategie;
 
-import com.lp.robot.dextools.entity.TradeOrder;
-
 /**
  * 功能描述:Strategy <br/>
  * 策略服务接口

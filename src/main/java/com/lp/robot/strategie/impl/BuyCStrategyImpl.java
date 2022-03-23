@@ -5,9 +5,11 @@ import com.lp.robot.dextools.service.ConfigService;
 import com.lp.robot.gate.common.CacheSingleton;
 import com.lp.robot.gate.common.GateIoCommon;
 import com.lp.robot.gate.common.LimitedList;
+import com.lp.robot.gate.common.MaCalculate;
 import com.lp.robot.gate.event.ErrorEvent;
 import com.lp.robot.gate.event.StrategyBuyCompleteEvent;
 import com.lp.robot.gate.obj.Candlestick2;
+import com.lp.robot.gate.obj.MaResultObj;
 import com.lp.robot.gate.obj.TickersObj;
 import com.lp.robot.strategie.StrategyProvider;
 import java.math.BigDecimal;
@@ -15,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -46,7 +49,10 @@ public class BuyCStrategyImpl implements StrategyProvider {
 
         final String exclude = configService.getByKey("exclude.tickers", "");
         final String volume = configService.getByKey("trading.volume", "3000000");
-        final List<TickersObj> tickers = gateIoCommon.getAllTickers(exclude, volume);
+        final List<TickersObj> tickers =
+                gateIoCommon.getAllTickers(exclude, volume)
+                        .stream().sorted(Comparator.comparing(o -> new BigDecimal(o.getBaseVolume()), Comparator.reverseOrder()))
+                        .collect(Collectors.toList());
         CountDownLatch latch = new CountDownLatch(tickers.size());
         List<String> symbols = new ArrayList<>();
         tickers.forEach(tickersObj -> executor.execute(() -> {
@@ -103,6 +109,7 @@ public class BuyCStrategyImpl implements StrategyProvider {
                         .divide(new BigDecimal(String.valueOf(5)), candlestick.get(0).getClose().scale(), BigDecimal.ROUND_DOWN);
             }
         }
-        return third.compareTo(second) > 0 && first.compareTo(second) > 0;
+        final MaResultObj ma5 = MaCalculate.execute(candlestick, 300, 5);
+        return third.compareTo(second) > 0 && first.compareTo(second) > 0 && ma5.getCurrent().compareTo(ma5.getPrevious()) > 0;
     }
 }

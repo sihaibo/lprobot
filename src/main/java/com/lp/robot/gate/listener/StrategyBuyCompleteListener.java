@@ -9,17 +9,10 @@ import com.lp.robot.dextools.service.TradeOrderService;
 import com.lp.robot.gate.common.GateIoCommon;
 import com.lp.robot.gate.event.ErrorEvent;
 import com.lp.robot.gate.event.StrategyBuyCompleteEvent;
-import com.lp.robot.gate.obj.Candlestick2;
 import com.lp.robot.gate.obj.TickersObj;
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneOffset;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,17 +50,17 @@ public class StrategyBuyCompleteListener implements ApplicationListener<Strategy
         String symbol = String.valueOf(event.getSource());
 
         // 紧急避险。当BTC当日是亏本的时候就不买了
-        final List<Candlestick2> candlestick = gateIoCommon.candlestick("btc_usdt", "3600", "25");
-        candlestick.sort(Comparator.comparing(Candlestick2::getTime, Comparator.reverseOrder()));
-        final LocalDateTime localDateTime = LocalDateTime.of(LocalDate.now(), LocalTime.of(0, 0, 0));
-        final long milli = localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli();
-        final Optional<Candlestick2> opt = candlestick.stream().filter(candlestick2 -> candlestick2.getTime() == milli).findFirst();
-        if (!opt.isPresent()) {
-            return;
-        }
-        if (candlestick.get(0).getClose().divide(opt.get().getOpen(), 5, BigDecimal.ROUND_HALF_UP).compareTo(BigDecimal.ONE) < 0) {
-            return;
-        }
+//        final List<Candlestick2> candlestick = gateIoCommon.candlestick("btc_usdt", "3600", "25");
+//        candlestick.sort(Comparator.comparing(Candlestick2::getTime, Comparator.reverseOrder()));
+//        final LocalDateTime localDateTime = LocalDateTime.of(LocalDate.now(), LocalTime.of(0, 0, 0));
+//        final long milli = localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli();
+//        final Optional<Candlestick2> opt = candlestick.stream().filter(candlestick2 -> candlestick2.getTime() == milli).findFirst();
+//        if (!opt.isPresent()) {
+//            return;
+//        }
+//        if (candlestick.get(0).getClose().divide(opt.get().getOpen(), 5, BigDecimal.ROUND_HALF_UP).compareTo(BigDecimal.ONE) < 0) {
+//            return;
+//        }
 
         final List<TradeOrder> processing = tradeOrderService.findProcessing();
 
@@ -93,7 +86,7 @@ public class StrategyBuyCompleteListener implements ApplicationListener<Strategy
             // 2. 查询账户余额
             final BigDecimal balances = gateIoCommon.balances("usdt");
             // 最大买入
-            String max = configService.getByKey("buy.max", "5");
+            String max = configService.getByKey("buy.max", "2");
             if (balances.compareTo(new BigDecimal(max)) < 0) {
                 return;
             }

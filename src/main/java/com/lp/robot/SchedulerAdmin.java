@@ -1,8 +1,7 @@
 package com.lp.robot;
 
 import com.lp.robot.gate.handler.StatisticalHandler;
-import com.lp.robot.strategie.StrategyProvider;
-import javax.annotation.Resource;
+import com.lp.robot.strategie.StrategyFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -20,17 +19,8 @@ import org.springframework.stereotype.Component;
 public class SchedulerAdmin {
 
 
-    @Resource(name = "buyStrategy")
-    private StrategyProvider buyStrategy;
-
-    @Resource(name = "buyIncrStrategy")
-    private StrategyProvider buyIncrStrategy;
-
-    @Resource(name = "buyCStrategy")
-    private StrategyProvider buyCStrategy;
-
-    @Resource(name = "sellIncrStrategy")
-    private StrategyProvider sellIncrStrategy;
+    @Autowired
+    private StrategyFactory factory;
 
     @Autowired
     private StatisticalHandler statisticalHandler;
@@ -41,19 +31,18 @@ public class SchedulerAdmin {
     }
 
 
-    @Scheduled(cron = "10 1/5 * * * ?")
+    @Scheduled(cron = "30 2/5 * * * ?")
     private void buy() {
-        buyStrategy.execute();
-        buyCStrategy.execute();
+        factory.get("buyCStrategy").execute();
     }
 
-    @Scheduled(cron = "0/10 * * * * ?")
+    @Scheduled(cron = "10 2/5 * * * ?")
     private void sell() {
-        sellIncrStrategy.execute();
+        factory.get("sellCStrategy").execute();
     }
 
     @Scheduled(cron = "0/15 * 0,8,20 * * ?")
     private void incrBuy() {
-        buyIncrStrategy.execute();
+        factory.get("buyIncrStrategy").execute();
     }
 }
