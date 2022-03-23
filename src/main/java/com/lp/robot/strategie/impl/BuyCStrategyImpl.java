@@ -110,6 +110,10 @@ public class BuyCStrategyImpl implements StrategyProvider {
             }
         }
         final MaResultObj ma5 = MaCalculate.execute(candlestick, 300, 5);
-        return third.compareTo(second) > 0 && first.compareTo(second) > 0 && ma5.getCurrent().compareTo(ma5.getPrevious()) > 0;
+        boolean result = third.compareTo(second) > 0 && first.compareTo(second) > 0 && ma5.getCurrent().compareTo(ma5.getPrevious()) > 0;
+        if (result) {
+            log.info("BuyCStrategyImpl third:{} > second:{} < first:{}, md5 current:{} > previous:{}", third, second, first, ma5.getCurrent(), ma5.getPrevious());
+        }
+        return result;
     }
 }

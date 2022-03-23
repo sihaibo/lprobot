@@ -116,10 +116,10 @@ public class SellCStrategyImpl implements StrategyProvider {
                             .sorted(Comparator.comparing(Candlestick2::getTime, Comparator.reverseOrder()))
                             .collect(Collectors.toList());
             final MaResultObj ma5 = MaCalculate.execute(candlestick, 300, 5);
-            final Candlestick2 candlestick2 = candlestick.get(0);
-            if (ma5.getCurrent().compareTo(ma5.getPrevious()) > 0 && candlestick2.getHigh().compareTo(candlestick2.getOpen()) != 0) {
+            if (ma5.getCurrent().compareTo(ma5.getPrevious()) > 0) {
                 return;
             }
+            log.info("SellCStrategyImpl md5 current:{} < previous:{}", ma5.getCurrent(), ma5.getPrevious());
 
 
             final BigDecimal orderBookPrice = gateIoCommon.orderBook(tradeOrder.getSymbol(), false,

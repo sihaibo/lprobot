@@ -31,12 +31,12 @@ public class SchedulerAdmin {
     }
 
 
-    @Scheduled(cron = "30 2/5 * * * ?")
+    @Scheduled(cron = "10 0/5 * * * ?")
     private void buy() {
         factory.get("buyCStrategy").execute();
     }
 
-    @Scheduled(cron = "10 2/5 * * * ?")
+    @Scheduled(cron = "30 * * * * ?")
     private void sell() {
         factory.get("sellCStrategy").execute();
     }
