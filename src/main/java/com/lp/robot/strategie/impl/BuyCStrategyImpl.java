@@ -45,7 +45,7 @@ public class BuyCStrategyImpl implements StrategyProvider {
     private ApplicationContext applicationContext;
 
     @Override
-    public void execute() {
+    public void execute(int groupSec) {
 
         final String exclude = configService.getByKey("exclude.tickers", "");
         final String volume = configService.getByKey("trading.volume", "3000000");
@@ -57,7 +57,7 @@ public class BuyCStrategyImpl implements StrategyProvider {
         List<String> symbols = new ArrayList<>();
         tickers.forEach(tickersObj -> executor.execute(() -> {
             try {
-                if (execute(tickersObj.getSymbol())) {
+                if (execute(tickersObj.getSymbol(), groupSec)) {
                     symbols.add(tickersObj.getSymbol());
                 }
             } finally {
@@ -65,18 +65,19 @@ public class BuyCStrategyImpl implements StrategyProvider {
             }
         }));
         try { latch.await(); } catch (InterruptedException e) { e.printStackTrace(); }
+        String strategy = groupSec == 300 ? CacheSingleton.KEY_STRATEGY_C : CacheSingleton.KEY_STRATEGY_D;
         // 发起买入
-        final int number = configService.getStrategyNumber(CacheSingleton.KEY_STRATEGY_C);
+        final int number = configService.getStrategyNumber(strategy);
         for (int i = 0; i < symbols.size(); i++) {
             if (i < number) {
-                applicationContext.publishEvent(new StrategyBuyCompleteEvent(symbols.get(i), CacheSingleton.KEY_STRATEGY_C, number));
+                applicationContext.publishEvent(new StrategyBuyCompleteEvent(symbols.get(i), strategy, number));
             }
         }
     }
 
-    public boolean execute(String symbol) {
+    public boolean execute(String symbol, int groupSec) {
         // 查询一小时内5分钟K线
-        final List<Candlestick2> candlestick = gateIoCommon.candlestick(symbol, "300", "1");
+        final List<Candlestick2> candlestick = gateIoCommon.candlestick(symbol, String.valueOf(groupSec), "1");
         candlestick.sort(Comparator.comparing(Candlestick2::getTime, Comparator.reverseOrder()));
         LimitedList<Candlestick2> limitedList = new LimitedList<>(10);
         BigDecimal first = BigDecimal.ZERO, second = BigDecimal.ZERO, third = BigDecimal.ZERO;
@@ -94,19 +95,19 @@ public class BuyCStrategyImpl implements StrategyProvider {
                 third = limitedList.stream()
                         .map(Candlestick2::getClose)
                         .reduce(BigDecimal.ZERO, BigDecimal::add)
-                        .divide(new BigDecimal(String.valueOf(5)), candlestick.get(0).getClose().scale(), BigDecimal.ROUND_DOWN);
+                        .divide(new BigDecimal(String.valueOf(10)), candlestick.get(0).getClose().scale(), BigDecimal.ROUND_DOWN);
             }
             if (i == 11) {
                 second = limitedList.stream()
                         .map(Candlestick2::getClose)
                         .reduce(BigDecimal.ZERO, BigDecimal::add)
-                        .divide(new BigDecimal(String.valueOf(5)), candlestick.get(0).getClose().scale(), BigDecimal.ROUND_DOWN);
+                        .divide(new BigDecimal(String.valueOf(10)), candlestick.get(0).getClose().scale(), BigDecimal.ROUND_DOWN);
             }
             if (i == 12) {
                 first = limitedList.stream()
                         .map(Candlestick2::getClose)
                         .reduce(BigDecimal.ZERO, BigDecimal::add)
-                        .divide(new BigDecimal(String.valueOf(5)), candlestick.get(0).getClose().scale(), BigDecimal.ROUND_DOWN);
+                        .divide(new BigDecimal(String.valueOf(10)), candlestick.get(0).getClose().scale(), BigDecimal.ROUND_DOWN);
             }
         }
         final MaResultObj ma5 = MaCalculate.execute(candlestick, 300, 5);

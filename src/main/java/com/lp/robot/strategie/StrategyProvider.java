@@ -9,6 +9,8 @@ package com.lp.robot.strategie;
  */
 public interface StrategyProvider {
 
-    void execute();
+    default void execute(){}
+
+    default void execute(int groupSec){}
 
 }

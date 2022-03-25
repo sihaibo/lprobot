@@ -51,17 +51,17 @@ public class SellCStrategyImpl implements StrategyProvider {
     private TradeProfitService tradeProfitService;
 
     @Override
-    public void execute() {
+    public void execute(int groupSec) {
         // 1. 查询所有处理中订单
         final List<TradeOrder> tradeOrders = tradeOrderService.findProcessing();
         // 2. 判断买单成功
         tradeOrders.stream()
                 .filter(tradeOrder -> TradeOrderTypeEnum.BUY.equals(tradeOrder.getTradeOrderType()))
                 .filter(tradeOrder -> TradeOrderStatusEnum.OPEN.equals(tradeOrder.getTradeOrderStatus()))
-                .forEach(tradeOrder -> executor.execute(() -> execute(tradeOrder)));
+                .forEach(tradeOrder -> executor.execute(() -> execute(tradeOrder, groupSec)));
     }
 
-    private void execute(TradeOrder tradeOrder) {
+    private void execute(TradeOrder tradeOrder, int groupSec) {
         applicationContext.publishEvent(new StrategySellCompleteEvent(tradeOrder, order -> {
             // 1. 先查询是否存在卖单
             BigDecimal sellOrderNumber = CacheSingleton.getInstance().get(CacheSingleton.KEY_BUY_INCR_ORDER_NUMBER, tradeOrder.getOrderNumber());
@@ -112,10 +112,10 @@ public class SellCStrategyImpl implements StrategyProvider {
             // 不存在判断处理
             //根据MA判断卖出，MA5已经降低，并且当前最新的也开始降低了
             final List<Candlestick2> candlestick =
-                    gateIoCommon.candlestick(tradeOrder.getSymbol(), "300", "1").stream()
+                    gateIoCommon.candlestick(tradeOrder.getSymbol(), String.valueOf(groupSec), "1").stream()
                             .sorted(Comparator.comparing(Candlestick2::getTime, Comparator.reverseOrder()))
                             .collect(Collectors.toList());
-            final MaResultObj ma5 = MaCalculate.execute(candlestick, 300, 5);
+            final MaResultObj ma5 = MaCalculate.execute(candlestick, groupSec, 5);
             if (ma5.getCurrent().compareTo(ma5.getPrevious()) > 0) {
                 return;
             }
