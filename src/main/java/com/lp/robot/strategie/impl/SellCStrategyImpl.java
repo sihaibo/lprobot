@@ -119,7 +119,7 @@ public class SellCStrategyImpl implements StrategyProvider {
             if (ma5.getCurrent().compareTo(ma5.getPrevious()) > 0) {
                 return;
             }
-            log.info("SellCStrategyImpl md5 current:{} < previous:{}", ma5.getCurrent(), ma5.getPrevious());
+            log.info("SellCStrategyImpl symbol:{} md5 current:{} < previous:{}", tradeOrder.getSymbol(), ma5.getCurrent(), ma5.getPrevious());
 
 
             final BigDecimal orderBookPrice = gateIoCommon.orderBook(tradeOrder.getSymbol(), false,
