@@ -348,7 +348,7 @@ public class GateIoCommon {
             tradeOrder.setErrorMsg("sell http exception");
             return tradeOrder;
         }
-        log.info("gate.io request sell symbol:{} result:{}", symbol, result);
+        log.info("gate.io request sell symbol:{} params:{}. result:{}", symbol, params, result);
         final JSONObject resultJSON = JSON.parseObject(result);
         if (!resultJSON.getBoolean("result")) {
             log.error("gate.io request sell failed continue. symbol: {}, result:{}", symbol, result);

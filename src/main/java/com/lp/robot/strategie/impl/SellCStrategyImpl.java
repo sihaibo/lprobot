@@ -58,6 +58,7 @@ public class SellCStrategyImpl implements StrategyProvider {
         tradeOrders.stream()
                 .filter(tradeOrder -> TradeOrderTypeEnum.BUY.equals(tradeOrder.getTradeOrderType()))
                 .filter(tradeOrder -> TradeOrderStatusEnum.OPEN.equals(tradeOrder.getTradeOrderStatus()))
+                .filter(tradeOrder -> tradeOrder.getStrategy().equals(groupSec == 300 ? CacheSingleton.KEY_STRATEGY_C : CacheSingleton.KEY_STRATEGY_D))
                 .forEach(tradeOrder -> executor.execute(() -> execute(tradeOrder, groupSec)));
     }
 
