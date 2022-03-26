@@ -109,7 +109,7 @@ public class SellCStrategyImpl implements StrategyProvider {
                 }
                 return;
             }
-            int groupSec = tradeOrder.getStrategy().equals(CacheSingleton.KEY_STRATEGY_D) ? 120 : 300;
+            int groupSec = tradeOrder.getStrategy().equals(CacheSingleton.KEY_STRATEGY_D) ? 60 : 300;
             // 不存在判断处理
             //根据MA判断卖出，MA5已经降低，并且当前最新的也开始降低了
             final List<Candlestick2> candlestick =
