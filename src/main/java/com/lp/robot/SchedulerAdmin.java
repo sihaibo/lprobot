@@ -44,7 +44,7 @@ public class SchedulerAdmin {
     @Scheduled(cron = "30 * * * * ?")
     private void sell() {
         factory.get("sellCStrategy").execute(300);
-        factory.get("sellCStrategy").execute(60);
+        factory.get("sellCStrategy").execute(120);
     }
 
     @Scheduled(cron = "0/15 * 0,8,20 * * ?")
