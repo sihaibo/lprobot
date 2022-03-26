@@ -51,18 +51,17 @@ public class SellCStrategyImpl implements StrategyProvider {
     private TradeProfitService tradeProfitService;
 
     @Override
-    public void execute(int groupSec) {
+    public void execute() {
         // 1. 查询所有处理中订单
         final List<TradeOrder> tradeOrders = tradeOrderService.findProcessing();
         // 2. 判断买单成功
         tradeOrders.stream()
                 .filter(tradeOrder -> TradeOrderTypeEnum.BUY.equals(tradeOrder.getTradeOrderType()))
                 .filter(tradeOrder -> TradeOrderStatusEnum.OPEN.equals(tradeOrder.getTradeOrderStatus()))
-                .filter(tradeOrder -> tradeOrder.getStrategy().equals(groupSec == 300 ? CacheSingleton.KEY_STRATEGY_C : CacheSingleton.KEY_STRATEGY_D))
-                .forEach(tradeOrder -> executor.execute(() -> execute(tradeOrder, groupSec)));
+                .forEach(tradeOrder -> executor.execute(() -> execute(tradeOrder)));
     }
 
-    private void execute(TradeOrder tradeOrder, int groupSec) {
+    private void execute(TradeOrder tradeOrder) {
         applicationContext.publishEvent(new StrategySellCompleteEvent(tradeOrder, order -> {
             // 1. 先查询是否存在卖单
             BigDecimal sellOrderNumber = CacheSingleton.getInstance().get(CacheSingleton.KEY_BUY_INCR_ORDER_NUMBER, tradeOrder.getOrderNumber());
@@ -110,6 +109,7 @@ public class SellCStrategyImpl implements StrategyProvider {
                 }
                 return;
             }
+            int groupSec = tradeOrder.getStrategy().equals(CacheSingleton.KEY_STRATEGY_D) ? 120 : 300;
             // 不存在判断处理
             //根据MA判断卖出，MA5已经降低，并且当前最新的也开始降低了
             final List<Candlestick2> candlestick =

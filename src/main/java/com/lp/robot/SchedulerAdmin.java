@@ -36,15 +36,14 @@ public class SchedulerAdmin {
         factory.get("buyCStrategy").execute(300);
     }
 
-    @Scheduled(cron = "5 * * * * ?")
+    @Scheduled(cron = "15 * * * * ?")
     private void buyD() {
         factory.get("buyCStrategy").execute(60);
     }
 
-    @Scheduled(cron = "30 * * * * ?")
+    @Scheduled(cron = "5 * * * * ?")
     private void sell() {
-        factory.get("sellCStrategy").execute(300);
-        factory.get("sellCStrategy").execute(120);
+        factory.get("sellCStrategy").execute();
     }
 
     @Scheduled(cron = "0/15 * 0,8,20 * * ?")
