@@ -100,12 +100,7 @@ public class SellCStrategyImpl implements StrategyProvider {
                     if (sellTradeOrder.getCreateDateTime().plusMinutes(3).compareTo(LocalDateTime.now()) > 0) {
                         return;
                     }
-                    final Boolean cancel = gateIoCommon.cancel(tradeOrder.getSymbol(), sellOrderNumber.toPlainString());
-                    if (cancel) {
-                        // 1. 更新卖单取消
-                        tradeOrderService.updateStatusById(TradeOrderStatusEnum.CANCELLED, sellTradeOrder.getId());
-                        CacheSingleton.getInstance().remove(CacheSingleton.KEY_BUY_INCR_ORDER_NUMBER, tradeOrder.getOrderNumber());
-                    }
+                    gateIoCommon.cancel(tradeOrder.getSymbol(), sellOrderNumber.toPlainString());
                 }
                 return;
             }
