@@ -16,13 +16,17 @@ import java.util.List;
 public class MaCalculate {
 
     public static MaResultObj execute(List<Candlestick2> candlestick, int base, int index) {
+        return execute(candlestick, base, index, false);
+    }
+
+    public static MaResultObj execute(List<Candlestick2> candlestick, int base, int index, boolean reset) {
         MaResultObj result = new MaResultObj();
         result.setIndex(index);
         result.setBase(base);
         // 根据时间倒序
         candlestick.sort(Comparator.comparing(Candlestick2::getTime, Comparator.reverseOrder()));
         LimitedList<Candlestick2> limitedList = new LimitedList<>(index);
-        for (int i = 1; i < index + 2; i++) {
+        for (int i = reset ? 0 : 1; i < index + 2; i++) {
             limitedList.add(candlestick.get(i));
             if (limitedList.size() < index) {
                 continue;

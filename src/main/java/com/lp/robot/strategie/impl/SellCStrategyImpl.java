@@ -111,7 +111,7 @@ public class SellCStrategyImpl implements StrategyProvider {
                     gateIoCommon.candlestick(tradeOrder.getSymbol(), String.valueOf(groupSec), "1").stream()
                             .sorted(Comparator.comparing(Candlestick2::getTime, Comparator.reverseOrder()))
                             .collect(Collectors.toList());
-            final MaResultObj ma5 = MaCalculate.execute(candlestick, groupSec, 5);
+            final MaResultObj ma5 = MaCalculate.execute(candlestick, groupSec, 5, true);
             if (ma5.getCurrent().compareTo(ma5.getPrevious()) > 0) {
                 return;
             }

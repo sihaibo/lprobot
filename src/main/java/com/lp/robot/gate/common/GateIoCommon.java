@@ -432,7 +432,7 @@ public class GateIoCommon {
             log.error("gate.io request cancel http exception continue. symbol: {}", symbol, e);
             return false;
         }
-        log.info("gate.io request cancel result:{}", result);
+        log.info("gate.io request cancel result:{}, params:{}", result, params);
         return JSON.parseObject(result).getBoolean("result");
     }
 
@@ -493,8 +493,12 @@ public class GateIoCommon {
         }
         log.info("gate.io request get order result:{}", result);
         final JSONObject resultJSON = JSON.parseObject(result);
-        if (!resultJSON.getBoolean("result")) {
+        if (!resultJSON.getBoolean("result") && resultJSON.getIntValue("code") != 17) {
             log.error("gate.io request get order failed. symbol: {}, result:{}", symbol, result);
+            return tradeOrder;
+        }
+        if (resultJSON.getIntValue("code") == 17 && resultJSON.getString("message").contains("cancelled")) {
+            tradeOrder.setTradeOrderStatus(TradeOrderStatusEnum.CANCELLED);
             return tradeOrder;
         }
         final JSONObject orderJSON = resultJSON.getJSONObject("order");
