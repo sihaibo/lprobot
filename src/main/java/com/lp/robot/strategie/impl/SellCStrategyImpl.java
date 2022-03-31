@@ -101,7 +101,7 @@ public class SellCStrategyImpl implements StrategyProvider {
                         return;
                     }
                     // 判断下，数量是否还够，交易所可能挂单卖出去一部分了。
-                    final BigDecimal balances = gateIoCommon.balances(tradeOrder.getSymbol().replace("_usdt", ""));
+                    final BigDecimal balances = gateIoCommon.balancesForLocked(tradeOrder.getSymbol().replace("_usdt", ""));
                     // 资金足够的时候 才可以取消订单
                     if (balances.compareTo(order.getTradeNumber()) >= 0) {
                         gateIoCommon.cancel(tradeOrder.getSymbol(), sellOrderNumber.toPlainString());

@@ -259,11 +259,17 @@ public class GateIoCommon {
      * @return
      */
     public BigDecimal balances(String symbol) {
+        return balances0(symbol, "available");
+    }
 
+    public BigDecimal balancesForLocked(String symbol) {
+        return balances0(symbol, "locked");
+    }
+
+    private BigDecimal balances0(String symbol, String key) {
         if (mock()) {
             return new BigDecimal("5");
         }
-
         String result;
         try {
             result = HttpUtilManager.getInstance().buildKey(this.secret, this.key)
@@ -277,7 +283,7 @@ public class GateIoCommon {
             log.error("gate.io request balances result failed. symbol: {}, result:{}", symbol, result);
             return BigDecimal.ZERO;
         }
-        final JSONObject availableJSON = resultJSON.getJSONObject("available");
+        final JSONObject availableJSON = resultJSON.getJSONObject(key);
         return availableJSON.getBigDecimal(symbol.contains("_") ? symbol.split("_")[0].toUpperCase() : symbol.toUpperCase());
     }
 
