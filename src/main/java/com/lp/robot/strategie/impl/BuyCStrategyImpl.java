@@ -5,6 +5,7 @@ import com.lp.robot.dextools.service.ConfigService;
 import com.lp.robot.gate.common.CacheSingleton;
 import com.lp.robot.gate.common.GateIoCommon;
 import com.lp.robot.gate.common.LimitedList;
+import com.lp.robot.gate.common.MACDCalculate;
 import com.lp.robot.gate.common.MaCalculate;
 import com.lp.robot.gate.event.ErrorEvent;
 import com.lp.robot.gate.event.StrategyBuyCompleteEvent;
@@ -117,6 +118,13 @@ public class BuyCStrategyImpl implements StrategyProvider {
         boolean result = third.compareTo(second) > 0 && first.compareTo(second) > 0 && ma5.getCurrent().compareTo(ma5.getPrevious()) > 0;
         if (result) {
             log.info("BuyCStrategyImpl symbol:{} third:{} > second:{} < first:{}, md5 current:{} > previous:{}", symbol, third, second, first, ma5.getCurrent(), ma5.getPrevious());
+        }
+        List<BigDecimal> closes = new ArrayList<>();
+        gateIoCommon.candlestick(symbol, String.valueOf(groupSec), "10").stream()
+                .sorted(Comparator.comparing(Candlestick2::getTime)).forEach(candlestick2 -> closes.add(candlestick2.getClose()));
+        final BigDecimal macd = MACDCalculate.macd(closes, 12, 26, 9).get(MACDCalculate.KEY_MACD);
+        if (macd.compareTo(BigDecimal.ZERO) < 0) {
+            return false;
         }
         return result;
     }
