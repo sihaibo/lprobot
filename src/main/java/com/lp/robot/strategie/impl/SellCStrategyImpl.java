@@ -63,7 +63,7 @@ public class SellCStrategyImpl implements StrategyProvider {
                             .sorted(Comparator.comparing(Candlestick2::getTime, Comparator.reverseOrder()))
                             .collect(Collectors.toList());
             final MaResultObj ma5 = MaCalculate.execute(candlestick, groupSec, 5);
-            if (ma5.getCurrent().compareTo(ma5.getPrevious()) > 0) {
+            if (ma5.getCurrent().compareTo(ma5.getPrevious()) >= 0) {
                 return false;
             }
             log.info("SellCStrategyImpl symbol:{} md5 current:{} < previous:{}", tradeOrder.getSymbol(), ma5.getCurrent(), ma5.getPrevious());
