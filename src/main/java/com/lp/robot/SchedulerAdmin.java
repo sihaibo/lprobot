@@ -2,7 +2,6 @@ package com.lp.robot;
 
 import com.lp.robot.gate.handler.StatisticalHandler;
 import com.lp.robot.strategie.StrategyFactory;
-import java.time.LocalDateTime;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -37,20 +36,10 @@ public class SchedulerAdmin {
         factory.get("buyCStrategy").execute(300);
     }
 
-//    @Scheduled(cron = "15 * * * * ?")
-    private void buyD() {
-        factory.get("buyCStrategy").execute(60);
-    }
-
     @Scheduled(cron = "5 * * * * ?")
     private void sell() {
-        if (LocalDateTime.now().getMinute() % 5 > 1) {
-            factory.get("sellCStrategy").execute();
-        }
-    }
-
-    @Scheduled(cron = "0/15 * 0,8,20 * * ?")
-    private void incrBuy() {
-        factory.get("buyIncrStrategy").execute();
+        factory.get("sellCStrategy").execute();
+        factory.get("buyEStrategy").execute();
+        factory.get("sellIncrStrategy").execute();
     }
 }

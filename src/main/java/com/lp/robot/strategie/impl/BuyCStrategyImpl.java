@@ -65,12 +65,15 @@ public class BuyCStrategyImpl implements StrategyProvider {
             }
         }));
         try { latch.await(); } catch (InterruptedException e) { e.printStackTrace(); }
+
+        tickers.removeIf(tickersObj -> !symbols.contains(tickersObj.getSymbol()));
+
         String strategy = groupSec == 300 ? CacheSingleton.KEY_STRATEGY_C : CacheSingleton.KEY_STRATEGY_D;
         // 发起买入
         final int number = configService.getStrategyNumber(strategy);
-        for (int i = 0; i < symbols.size(); i++) {
+        for (int i = 0; i < tickers.size(); i++) {
             if (i < number) {
-                applicationContext.publishEvent(new StrategyBuyCompleteEvent(symbols.get(i), strategy, number));
+                applicationContext.publishEvent(new StrategyBuyCompleteEvent(tickers.get(i).getSymbol(), strategy, number));
             }
         }
     }

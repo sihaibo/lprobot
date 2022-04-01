@@ -53,6 +53,7 @@ public class CacheSingleton {
     public static final String KEY_STRATEGY_B = "B";
     public static final String KEY_STRATEGY_C = "C";
     public static final String KEY_STRATEGY_D = "D";
+    public static final String KEY_STRATEGY_E = "E";
 
     private Map<String, ConcurrentHashMap<String, BigDecimal>> cache = new ConcurrentHashMap<>();
 

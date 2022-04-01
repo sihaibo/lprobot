@@ -2,8 +2,7 @@ package com.lp.robot;
 
 import com.lp.robot.gate.common.CacheSingleton;
 import com.lp.robot.gate.event.StrategyBuyCompleteEvent;
-import com.lp.robot.strategie.StrategyProvider;
-import javax.annotation.Resource;
+import com.lp.robot.strategie.StrategyFactory;
 import lombok.SneakyThrows;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -23,14 +22,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 public class BuyIncrStrategyTest {
 
-    @Resource(name = "buyIncrStrategy")
-    private StrategyProvider buyIncrStrategy;
-
-    @Resource(name = "buyStrategy")
-    private StrategyProvider buyStrategy;
-
-    @Resource(name = "buyCStrategy")
-    private StrategyProvider buyCStrategy;
+    @Autowired
+    private StrategyFactory factory;
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -38,7 +31,7 @@ public class BuyIncrStrategyTest {
 
     @Test
     public void buy() {
-        buyCStrategy.execute();
+        factory.get("buyEStrategy").execute();
     }
 
     @SneakyThrows

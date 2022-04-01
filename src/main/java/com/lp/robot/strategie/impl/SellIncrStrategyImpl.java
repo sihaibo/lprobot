@@ -1,22 +1,17 @@
 package com.lp.robot.strategie.impl;
 
-import com.lp.robot.gate.obj.Candlestick2;
 import com.lp.robot.dextools.entity.TradeOrder;
-import com.lp.robot.dextools.entity.TradeProfit;
 import com.lp.robot.dextools.enums.TradeOrderStatusEnum;
 import com.lp.robot.dextools.enums.TradeOrderTypeEnum;
-import com.lp.robot.dextools.enums.TradeOrderVersion;
 import com.lp.robot.dextools.service.TradeOrderService;
-import com.lp.robot.dextools.service.TradeProfitService;
 import com.lp.robot.gate.common.CacheSingleton;
 import com.lp.robot.gate.common.GateIoCommon;
 import com.lp.robot.gate.common.MaCalculate;
-import com.lp.robot.gate.event.ErrorEvent;
 import com.lp.robot.gate.event.StrategySellCompleteEvent;
+import com.lp.robot.gate.obj.Candlestick2;
 import com.lp.robot.gate.obj.MaResultObj;
 import com.lp.robot.strategie.StrategyProvider;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Objects;
@@ -25,7 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 /**
  * 功能描述: <br/>
@@ -46,8 +40,6 @@ public class SellIncrStrategyImpl implements StrategyProvider {
     private GateIoCommon gateIoCommon;
     @Autowired
     private ApplicationContext applicationContext;
-    @Autowired
-    private TradeProfitService tradeProfitService;
 
     @Override
     public void execute() {
@@ -57,6 +49,7 @@ public class SellIncrStrategyImpl implements StrategyProvider {
         tradeOrders.stream()
                 .filter(tradeOrder -> TradeOrderTypeEnum.BUY.equals(tradeOrder.getTradeOrderType()))
                 .filter(tradeOrder -> TradeOrderStatusEnum.OPEN.equals(tradeOrder.getTradeOrderStatus()))
+                .filter(tradeOrder -> tradeOrder.getStrategy().equals(CacheSingleton.KEY_STRATEGY_E))
                 .forEach(tradeOrder -> executor.execute(() -> execute(tradeOrder)));
     }
 
@@ -71,57 +64,10 @@ public class SellIncrStrategyImpl implements StrategyProvider {
             price = max;
             CacheSingleton.getInstance().put(CacheSingleton.KEY_BUY_INCR_MAX_PRICE, tradeOrder.getSymbol(), max);
         }
-        log.info("sell incr max price:{}, max:{},symbol:{}", price, max, tradeOrder.getSymbol());
+        log.info("sell incr max price:{}, symbol:{}", price, tradeOrder.getSymbol());
         final BigDecimal finalPrice = price;
         applicationContext.publishEvent(new StrategySellCompleteEvent(tradeOrder, order -> {
-            // 1. 先查询是否存在卖单
-            BigDecimal sellOrderNumber =
-                    CacheSingleton.getInstance().get(CacheSingleton.KEY_BUY_INCR_ORDER_NUMBER, tradeOrder.getOrderNumber());
-            // 存在卖单，查询卖单状态。
-            if (Objects.nonNull(sellOrderNumber)) {
-                final TradeOrder sell = gateIoCommon.getOrder(tradeOrder.getSymbol(), sellOrderNumber.toPlainString());
-                if (Objects.isNull(sell.getTradeOrderStatus())) {
-                    applicationContext.publishEvent(new ErrorEvent(tradeOrder.getSymbol(), String.format("卖单号：%s，查询失败。", sellOrderNumber.toPlainString())));
-                    return;
-                }
-                final TradeOrder sellTradeOrder = tradeOrderService.getByOrderNumber(sellOrderNumber.toPlainString());
-                // 卖单成功，更新订单状态
-                if (TradeOrderStatusEnum.CLOSED.equals(sell.getTradeOrderStatus())) {
-                    // 1. 更新买单成功
-                    tradeOrderService.updateStatusById(TradeOrderStatusEnum.CLOSED, tradeOrder.getId());
-                    // 2. 更新卖单成功
-                    tradeOrderService.updateStatusById(TradeOrderStatusEnum.CLOSED, sellTradeOrder.getId());
-                    CacheSingleton.getInstance().remove(CacheSingleton.KEY_BUY_INCR_ORDER_NUMBER, tradeOrder.getOrderNumber());
-                    CacheSingleton.getInstance().remove(CacheSingleton.KEY_BUY_INCR_MAX_PRICE, tradeOrder.getSymbol());
-                    // 3. 计算利润
-                    TradeProfit tradeProfit = new TradeProfit();
-                    tradeProfit.setBuyNumber(order.getTradeNumber());
-                    tradeProfit.setBuyPrice(order.getFilledPrice());
-                    tradeProfit.setSellNumber(sell.getTradeNumber());
-                    tradeProfit.setSellPrice(sell.getFilledPrice());
-                    tradeProfit.setProfit(sell.getToU().subtract(order.getToU()));
-                    tradeProfit.setSymbol(tradeOrder.getSymbol());
-                    tradeProfit.setStrategy(tradeOrder.getStrategy());
-                    tradeProfitService.create(tradeProfit);
-                } else if (TradeOrderStatusEnum.CANCELLED.equals(sell.getTradeOrderStatus())) {
-                    // 通过交易所手动取消订单了
-                    // 1. 更新卖单取消
-                    tradeOrderService.updateStatusById(TradeOrderStatusEnum.CANCELLED, sellTradeOrder.getId());
-                    CacheSingleton.getInstance().remove(CacheSingleton.KEY_BUY_INCR_ORDER_NUMBER, tradeOrder.getOrderNumber());
-                } else if (TradeOrderStatusEnum.OPEN.equals(sell.getTradeOrderStatus())) {
-                    // 1. 卖单挂了不到3分钟，可以不卖
-                    if (sellTradeOrder.getCreateDateTime().plusMinutes(3).compareTo(LocalDateTime.now()) > 0) {
-                        return;
-                    }
-                    final Boolean cancel = gateIoCommon.cancel(tradeOrder.getSymbol(), sellOrderNumber.toPlainString());
-                    if (cancel) {
-                        // 1. 更新卖单取消
-                        tradeOrderService.updateStatusById(TradeOrderStatusEnum.CANCELLED, sellTradeOrder.getId());
-                        CacheSingleton.getInstance().remove(CacheSingleton.KEY_BUY_INCR_ORDER_NUMBER, tradeOrder.getOrderNumber());
-                    }
-                }
-                return;
-            }
+
             // 最新价>买入价
             if (order.getLast().compareTo(order.getFilledPrice()) > 0) {
                 // 1. 买入以来的利润降低10%就可以抛出
@@ -134,7 +80,7 @@ public class SellIncrStrategyImpl implements StrategyProvider {
                         tradeOrder.getSymbol(), sellPrice, order.getLast(), order.getFilledPrice());
                 // 当前价格比卖出价大，可以继续保留
                 if (order.getLast().compareTo(sellPrice) > 0) {
-                    return;
+                    return false;
                 }
                 // 判断最近5分钟K线
                 // 查询一小时内5分钟K线
@@ -150,7 +96,7 @@ public class SellIncrStrategyImpl implements StrategyProvider {
                     CacheSingleton.getInstance().remove(CacheSingleton.KEY_MA_SELL, maResult.getKey());
                     // 买入利润低于1.01的话，先保留继续等等奇迹
                     if (order.getLast().divide(order.getFilledPrice(), 2, BigDecimal.ROUND_DOWN).compareTo(new BigDecimal("1.01")) < 0) {
-                        return;
+                        return false;
                     }
                 } else {
                     // MA跌落，缓存不存在就保存一下
@@ -160,10 +106,8 @@ public class SellIncrStrategyImpl implements StrategyProvider {
                     }
                     // 缓存值和当前MA值大于千一，直接卖出
                     if (cache.divide(maResult.getCurrent(), 3, BigDecimal.ROUND_DOWN).compareTo(new BigDecimal("1.002")) < 0) {
-                        return;
+                        return false;
                     }
-                    // 要卖出了，删除下缓存
-                    CacheSingleton.getInstance().remove(CacheSingleton.KEY_MA_SELL, maResult.getKey());
                 }
             } else {
                 // 亏损百分比
@@ -172,33 +116,13 @@ public class SellIncrStrategyImpl implements StrategyProvider {
                 log.info("sell incr last < buy price. last:{}, buy price:{}, percentage:{}, symbol:{}",
                         order.getLast(), order.getFilledPrice(), percentage, tradeOrder.getSymbol());
                 if (percentage.compareTo(new BigDecimal("1.005")) < 0) {
-                    return;
+                    return false;
                 }
             }
-            final BigDecimal orderBookPrice = gateIoCommon.orderBook(tradeOrder.getSymbol(), false,
-                    order.getTradeNumber().setScale(4, BigDecimal.ROUND_DOWN));
-            // 卖出
-            TradeOrder sell = new TradeOrder();
-            sell.setSymbol(tradeOrder.getSymbol());
-            sell.setPrice(orderBookPrice.compareTo(BigDecimal.ZERO) == 0 ? order.getLast() : orderBookPrice);
-            sell.setTradeNumber(order.getTradeNumber().setScale(4, BigDecimal.ROUND_DOWN));
-            sell.setTradeOrderStatus(TradeOrderStatusEnum.OPEN);
-            sell.setTradeOrderType(TradeOrderTypeEnum.SELL);
-            sell.setTradeOrderVersion(TradeOrderVersion.V2);
-            sell.setStrategy(CacheSingleton.KEY_STRATEGY_B);
-            final TradeOrder result = gateIoCommon.sell(tradeOrder.getSymbol(), sell.getPrice(), sell.getTradeNumber());
-            if (StringUtils.isEmpty(result.getOrderNumber())) {
-                applicationContext.publishEvent(new ErrorEvent(tradeOrder.getSymbol(),
-                        String.format("挂卖单失败。买单号：%s，描述：%s", tradeOrder.getOrderNumber(), result.getErrorMsg())));
-                sell.setErrorMsg(result.getErrorMsg());
-                sell.setTradeOrderStatus(TradeOrderStatusEnum.CANCELLED);
-            } else {
-                sell.setOrderNumber(result.getOrderNumber());
-                CacheSingleton.getInstance().put(
-                        CacheSingleton.KEY_BUY_INCR_ORDER_NUMBER, tradeOrder.getOrderNumber(), new BigDecimal(result.getOrderNumber()));
-
-            }
-            tradeOrderService.insert(sell);
+            // 要卖出了，删除下缓存
+            CacheSingleton.getInstance().remove(CacheSingleton.KEY_MA_SELL, "5_300");
+            CacheSingleton.getInstance().remove(CacheSingleton.KEY_BUY_INCR_MAX_PRICE, tradeOrder.getSymbol());
+            return true;
         }));
     }
 }

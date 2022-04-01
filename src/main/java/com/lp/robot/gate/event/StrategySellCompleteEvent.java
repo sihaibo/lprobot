@@ -1,7 +1,7 @@
 package com.lp.robot.gate.event;
 
 import com.lp.robot.dextools.entity.TradeOrder;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import org.springframework.context.ApplicationEvent;
 
 /**
@@ -13,14 +13,14 @@ import org.springframework.context.ApplicationEvent;
  */
 public class StrategySellCompleteEvent extends ApplicationEvent {
 
-    private Consumer<TradeOrder> consumer;
+    private Function<TradeOrder, Boolean> function;
 
-    public StrategySellCompleteEvent(TradeOrder source, Consumer<TradeOrder> consumer) {
+    public StrategySellCompleteEvent(TradeOrder source, Function<TradeOrder, Boolean> function) {
         super(source);
-        this.consumer = consumer;
+        this.function = function;
     }
 
-    public Consumer<TradeOrder> getConsumer() {
-        return consumer;
+    public Function<TradeOrder, Boolean> getFunction() {
+        return function;
     }
 }
